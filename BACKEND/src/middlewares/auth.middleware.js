@@ -19,7 +19,7 @@ async   function authUser(req,res,next){
 
     try{
         const decoded=jwt.verify(token,process.env.jwt_secret);
-        req.user=decoded;
+        req.user=decoded; // data initialised to req.user so that it can be used in the controller
         next();
     }
     catch(err){
