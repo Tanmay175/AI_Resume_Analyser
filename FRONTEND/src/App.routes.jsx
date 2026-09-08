@@ -3,6 +3,7 @@ import Login from './features/auth/pages/Login.jsx'
 import Register from './features/auth/pages/Register.jsx'
 import Protect from "./features/auth/components/protect.jsx";
 import Home from "./features/Interview/pages/Home.jsx";
+import Interview from "./features/Interview/pages/Interview.jsx";
 
 
 const router=createBrowserRouter([
@@ -17,6 +18,10 @@ const router=createBrowserRouter([
     {
         path:"/",
         element:<Protect><Home/></Protect>
+    },
+    {
+    path:"/interview/:interviewId",
+    element:<Protect><Interview/></Protect>
     }
 ])
 

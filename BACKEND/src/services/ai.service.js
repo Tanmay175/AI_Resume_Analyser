@@ -44,7 +44,7 @@ const interviewReportJsonSchema = {
         type: "object",
         properties: {
           skill: { type: "string", description: "The skill that the candidate is lacking" },
-          severity: { type: "string", enum: ["low", "medium", "hard"], description: "The severity of the skill gap" }
+          severity: { type: "string", enum: ["low", "medium", "high"], description: "The severity of the skill gap" }
         },
         required: ["skill", "severity"]
       },
@@ -57,7 +57,7 @@ const interviewReportJsonSchema = {
         properties: {
           day: { type: "integer", description: "The day of the preparation plan" },
           focus: { type: "string", description: "The focus of the preparation plan for that day" },
-          tasks: { 
+          tasks: {
             type: "array",
             items: { type: "string" },
             description: "The tasks to be completed on that day"
@@ -66,16 +66,17 @@ const interviewReportJsonSchema = {
         required: ["day", "focus", "tasks"]
       },
       description: "An array of preparation plans for the candidate"
+    },
+    title: {
+      type: "string",
+      description: "The title of the job for which the interview report is generated"
     }
   },
-  required: ["matchScore", "technicalQuestions", "behavioralQuestions", "skillGaps", "preparationPlan"]
+  required: ["matchScore", "technicalQuestions", "behavioralQuestions", "skillGaps", "preparationPlan", "title"]
 };
 
-// Convert JSON schema to Zod schema
 const interviewReportSchema = z.fromJSONSchema(interviewReportJsonSchema);
-
-const client = new GoogleGenAI({apiKey: process.env.GEMINI_API_KEY,});
-
+const client = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY });
 
 async function generateInterviewReport({ resume, jobDescription, selfDescription }) {
   const prompt = `
@@ -96,22 +97,17 @@ Based on this information, provide a detailed interview preparation report with:
 3. Behavioral questions for the interview
 4. Skill gaps and their severity
 5. A week-long preparation plan
+6. A short job title for the report
 
-Ensure the response is valid JSON matching the provided schema.
+Respond with valid JSON only, matching the schema exactly.
 `;
 
-  const interaction = await client.interactions.create({
-    model: "gemini-3.6-flash",
-    input: prompt,
-    response_format: {
-      type: "text",
-      mime_type: "application/json",
-      schema: interviewReportJsonSchema
-    }
+  const response = await client.models.generateContent({
+    model: "gemini-2.5-flash",
+    contents: prompt
   });
 
-  // Parse and validate the response
-  const report = interviewReportSchema.parse(JSON.parse(interaction.output_text));
+  const report = interviewReportSchema.parse(JSON.parse(response.text));
   return report;
 }
 
