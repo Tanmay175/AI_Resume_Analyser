@@ -44,7 +44,7 @@ const interviewReportJsonSchema = {
         type: "object",
         properties: {
           skill: { type: "string", description: "The skill that the candidate is lacking" },
-          severity: { type: "string", enum: ["low", "medium", "high"], description: "The severity of the skill gap" }
+          severity: { type: "string", enum: ["low", "medium", "hard"], description: "The severity of the skill gap" }
         },
         required: ["skill", "severity"]
       },
@@ -104,10 +104,21 @@ Respond with valid JSON only, matching the schema exactly.
 
   const response = await client.models.generateContent({
     model: "gemini-2.5-flash",
-    contents: prompt
+    contents: prompt,
+    config: {
+      responseMimeType: "application/json",
+      responseSchema: interviewReportJsonSchema
+    }
   });
 
-  const report = interviewReportSchema.parse(JSON.parse(response.text));
+  let parsedJson;
+  try {
+    parsedJson = JSON.parse(response.text);
+  } catch (err) {
+    throw new Error(`AI did not return valid JSON: ${err.message}`);
+  }
+
+  const report = interviewReportSchema.parse(parsedJson);
   return report;
 }
 
