@@ -1,15 +1,19 @@
 import { generateInterviewReport, getInterviewReportById, getAllInterviewReport } from "../services/interview.api.js"
-import { useContext } from "react"
+import { useCallback, useContext, useEffect } from "react"
 import { InterviewContext } from "../interview.context.jsx"
+import { useAuth } from "../../auth/hooks/useAuth.js"
+import {useParams} from "react-router-dom"
 
 export const useInterview = () => {
     const context = useContext(InterviewContext)
+    const {interviewId} = useParams()
+    const { loading: authLoading, user } = useAuth()
 
     if (!context) {
         throw new Error("use interview must be used within an interview provider")
     }
 
-    const { loading, setloading, report, setReport, reports, setReports } = context
+    const { loading, setloading, report, setReport, reportError, setReportError, reports, setReports } = context
 
     const generateReport = async ({ jobDescription, resumeFile, selfDescription }) => {
         setloading(true)
@@ -17,6 +21,7 @@ export const useInterview = () => {
             const res = await generateInterviewReport({ jobDescription, resumeFile, selfDescription });
             const createdReport = res.interviewReport || res
             setReport(createdReport)
+            setReportError(null)
             return createdReport
         } catch (err) {
             console.log(err)
@@ -26,20 +31,32 @@ export const useInterview = () => {
         }
     }
 
-    async function getReportById(interviewId) {
+    const getReportById = useCallback(async (interviewId) => {
+        if (!interviewId) {
+            setReport(null)
+            return null
+        }
+
+        setReport(null)
+        setReportError(null)
         setloading(true)
         try {
             const res = await getInterviewReportById(interviewId)
             const detail = res.interviewReport || res
             setReport(detail)
+            setReportError(null)
             return detail
         } catch (err) {
+            setReportError({
+                status: err.response?.status,
+                message: err.response?.data?.message || "Unable to load this report."
+            })
             console.log(err)
             return null
         } finally {
             setloading(false)
         }
-    }
+    }, [setReport, setloading])
 
     async function getAllReports() {
         setloading(true)
@@ -56,5 +73,12 @@ export const useInterview = () => {
         }
     }
 
-    return { loading, report, reports, generateReport, getReportById, getAllReports }
+    useEffect(() => {
+        if (interviewId && !authLoading && user) {
+            getReportById(interviewId)
+        }
+    }, [interviewId, authLoading, user, getReportById])
+
+
+    return { loading, report, reportError, reports, generateReport, getReportById, getAllReports }
 }

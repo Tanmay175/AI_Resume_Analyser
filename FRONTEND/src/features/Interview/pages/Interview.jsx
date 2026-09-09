@@ -1,5 +1,7 @@
 import React, { useState } from 'react'
 import '../style/interview.scss'
+import { useInterview } from '../hooks/useInterview.js'
+import { useNavigate,useParams } from 'react-router-dom'
 
 // Functional logic is temporarily disabled so the page renders as a static UI mock.
 // Re-enable the API calls later when the backend is ready.
@@ -90,7 +92,15 @@ const RoadMapDay = ({ day }) => (
 
 const Interview = () => {
     const [activeNav, setActiveNav] = useState('technical')
-    const report = mockReport
+    const { report, reportError, loading } = useInterview()
+
+        if (!report) {
+            if (loading) {
+                return <div>Loading report...</div>
+            }
+
+            return <div>{reportError?.status === 401 ? 'Your session has expired. Please log in again.' : reportError?.message || 'Report not found.'}</div>
+    }
 
     const scoreColor =
         report.matchScore >= 80 ? 'score--high' :

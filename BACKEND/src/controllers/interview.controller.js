@@ -1,6 +1,7 @@
 import { generateInterviewReport } from "../services/ai.service.js";
 import {PDFParse} from 'pdf-parse'
 import interviewReportModel from "../models/report.model.js";
+import mongoose from "mongoose";
 
 async function genReportController(req,res){
     try {
@@ -56,6 +57,13 @@ async function genReportController(req,res){
 
 async function getReportByIdController(req,res){
     const {interviewId}=req.params;
+
+    if (!mongoose.isValidObjectId(interviewId)) {
+        return res.status(404).json({
+            message:"Interview report not found"
+        })
+    }
+
     const interviewReport= await interviewReportModel.findOne({_id:interviewId,user:req.user.id})
 
     if(!interviewReport){
