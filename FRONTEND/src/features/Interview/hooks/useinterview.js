@@ -1,13 +1,11 @@
 import { generateInterviewReport, getInterviewReportById, getAllInterviewReport } from "../services/interview.api.js"
 import { useCallback, useContext, useEffect } from "react"
 import { InterviewContext } from "../interview.context.jsx"
-import { useAuth } from "../../auth/hooks/useAuth.js"
-import {useParams} from "react-router-dom"
+import {useParams} from "react-router"
 
 export const useInterview = () => {
     const context = useContext(InterviewContext)
     const {interviewId} = useParams()
-    const { loading: authLoading, user } = useAuth()
 
     if (!context) {
         throw new Error("use interview must be used within an interview provider")
@@ -56,9 +54,9 @@ export const useInterview = () => {
         } finally {
             setloading(false)
         }
-    }, [setReport, setloading])
+    }, [setReport, setReportError, setloading])
 
-    async function getAllReports() {
+    const getAllReports = useCallback(async () => {
         setloading(true)
         try {
             const res = await getAllInterviewReport()
@@ -71,13 +69,13 @@ export const useInterview = () => {
         } finally {
             setloading(false)
         }
-    }
+    }, [setReports, setloading])
 
     useEffect(() => {
-        if (interviewId && !authLoading && user) {
+        if (interviewId) {
             getReportById(interviewId)
         }
-    }, [interviewId, authLoading, user, getReportById])
+    }, [interviewId, getReportById])
 
 
     return { loading, report, reportError, reports, generateReport, getReportById, getAllReports }
