@@ -1,5 +1,6 @@
 import resumeTemplate from "../templates/resume.template.js";
 import fs from "fs";
+import puppeteer from "puppeteer";
 
 const data = {
 
@@ -118,4 +119,35 @@ fs.writeFileSync(
     html
 );
 
-console.log("HTML generated");
+console.log("HTML generated: test-resume.html");
+
+// Standalone PDF generation — deliberately duplicated here rather than
+// imported from ai.service.js, so this test never needs GEMINI_API_KEY
+// or touches the real API path. Delete this file once the template is
+// verified and wired into ai.service.js's generateResumePdf().
+async function generateTestPdf() {
+    const browser = await puppeteer.launch();
+    try {
+        const page = await browser.newPage();
+        await page.setContent(html, { waitUntil: "networkidle0" });
+
+        const pdfBuffer = await page.pdf({
+            format: "A4",
+            printBackground: true,
+            preferCSSPageSize: true,
+            margin: {
+                top: "10mm",
+                bottom: "10mm",
+                left: "12mm",
+                right: "12mm"
+            }
+        });
+
+        fs.writeFileSync("test-resume.pdf", pdfBuffer);
+        console.log("PDF generated: test-resume.pdf");
+    } finally {
+        await browser.close();
+    }
+}
+
+generateTestPdf();
