@@ -1,3 +1,25 @@
+const escapeHtml = (value = "") => String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+
+const safeUrl = (value = "") => {
+    const text = String(value).trim();
+    const match = text.match(/(?:https?:\/\/)?(?:www\.)?(?:github\.com|linkedin\.com)\/[^\s)\]}>,]+/i);
+    if (!match) return "";
+
+    const url = /^https?:\/\//i.test(match[0]) ? match[0] : `https://${match[0]}`;
+    return escapeHtml(url.replace(/[.,;:]+$/, ""));
+};
+
+const contactLink = (label, value) => {
+    if (!value) return "";
+    const url = safeUrl(value);
+    return url ? `<a href="${url}">${escapeHtml(label)}</a>` : escapeHtml(value);
+};
+
 const resumeTemplate = (data) => `
 <!DOCTYPE html>
 <html>
@@ -8,7 +30,7 @@ const resumeTemplate = (data) => `
 
         @page {
             size: A4;
-            margin: 10mm 12mm;
+            margin: 8mm 10mm;
         }
 
         * {
@@ -20,8 +42,8 @@ const resumeTemplate = (data) => `
             padding: 0;
             font-family: Arial, Helvetica, sans-serif;
             color: #111;
-            font-size: 9.5pt;
-            line-height: 1.2;
+            font-size: 9pt;
+            line-height: 1.12;
         }
 
         .resume {
@@ -32,47 +54,48 @@ const resumeTemplate = (data) => `
 
         .header {
             text-align: center;
-            margin-bottom: 7px;
+            margin-bottom: 5px;
         }
 
         .name {
-            font-size: 20px;
+            font-size: 19px;
             font-weight: bold;
             margin-bottom: 3px;
         }
 
         .contact {
-            font-size: 8.5pt;
+            font-size: 8pt;
         }
+
+        a { color: #111; text-decoration: underline; }
 
         /* SECTIONS */
 
         .section {
-            margin-top: 7px;
+            margin-top: 5px;
         }
 
         .section-title {
-            font-size: 10.5pt;
+            font-size: 10pt;
             font-weight: bold;
             border-bottom: 1px solid #222;
             padding-bottom: 2px;
-            margin-bottom: 4px;
+            margin-bottom: 3px;
         }
 
         /* GENERAL */
 
         p {
-            margin: 2px 0;
+            margin: 1px 0;
         }
 
         ul {
-            margin-top: 2px;
-            margin-bottom: 2px;
-            padding-left: 16px;
+            margin: 1px 0;
+            padding-left: 15px;
         }
 
         li {
-            margin-bottom: 2px;
+            margin-bottom: 1px;
         }
 
         /* EDUCATION */
@@ -92,7 +115,7 @@ const resumeTemplate = (data) => `
         /* PROJECTS */
 
         .project {
-            margin-bottom: 5px;
+            margin-bottom: 3px;
         }
 
         .project-header {
@@ -104,11 +127,11 @@ const resumeTemplate = (data) => `
 
         .project-tech {
             font-weight: normal;
-            font-size: 8.5pt;
+            font-size: 8pt;
         }
 
         .project ul {
-            margin-top: 2px;
+            margin-top: 1px;
         }
 
         /* AVOID BAD PAGE BREAKS */
@@ -131,14 +154,14 @@ const resumeTemplate = (data) => `
     <div class="header">
 
         <div class="name">
-            ${data.name}
+            ${escapeHtml(data.name)}
         </div>
 
         <div class="contact">
-            ${data.phone} —
-            ${data.email} —
-            ${data.github} —
-            ${data.linkedin}
+            ${escapeHtml(data.phone)}${data.phone && data.email ? " | " : ""}
+            ${escapeHtml(data.email)}${data.email && data.github ? " | " : ""}
+            ${contactLink("GitHub", data.github)}${data.github && data.linkedin ? " | " : ""}
+            ${contactLink("LinkedIn", data.linkedin)}
         </div>
 
     </div>
@@ -149,11 +172,11 @@ const resumeTemplate = (data) => `
     <div class="section">
 
         <div class="section-title">
-            Objective
+            Summary
         </div>
 
         <p>
-            ${data.objective}
+            ${escapeHtml(data.objective)}
         </p>
 
     </div>
@@ -170,25 +193,24 @@ const resumeTemplate = (data) => `
         <div class="education-row">
 
             <span>
-                ${data.education.degree}
+                ${escapeHtml(data.education.degree)}
             </span>
 
             <span>
-                ${data.education.year}
+                ${escapeHtml(data.education.year)}
             </span>
 
         </div>
 
         <p>
-            ${data.education.college}
-            &nbsp;&nbsp;
-            ${data.education.cgpa}
+            ${escapeHtml(data.education.college)}
+            ${data.education.cgpa ? ` | ${escapeHtml(data.education.cgpa)}` : ""}
         </p>
 
         <p>
-            Class 12: ${data.education.class12}
-            &nbsp;&nbsp;
-            Class 10: ${data.education.class10}
+            ${data.education.class12 ? `Class 12: ${escapeHtml(data.education.class12)}` : ""}
+            ${data.education.class12 && data.education.class10 ? " | " : ""}
+            ${data.education.class10 ? `Class 10: ${escapeHtml(data.education.class10)}` : ""}
         </p>
 
     </div>
@@ -207,10 +229,10 @@ const resumeTemplate = (data) => `
             <div class="skill-row">
 
                 <strong>
-                    ${skill.category}:
+                    ${escapeHtml(skill.category)}:
                 </strong>
 
-                ${skill.items.join(", ")}
+                ${skill.items.map(escapeHtml).join(", ")}
 
             </div>
 
@@ -234,11 +256,11 @@ const resumeTemplate = (data) => `
                 <div class="project-header">
 
                     <span>
-                        ${project.name}
+                        ${escapeHtml(project.name)}
                     </span>
 
                     <span class="project-tech">
-                        ${project.tech}
+                        ${escapeHtml(project.tech)}
                     </span>
 
                 </div>
@@ -248,7 +270,7 @@ const resumeTemplate = (data) => `
                     ${project.points.map(point => `
 
                         <li>
-                            ${point}
+                            ${escapeHtml(point)}
                         </li>
 
                     `).join("")}
@@ -275,7 +297,7 @@ const resumeTemplate = (data) => `
             ${data.achievements.map(item => `
 
                 <li>
-                    ${item}
+                    ${escapeHtml(item)}
                 </li>
 
             `).join("")}
@@ -294,7 +316,7 @@ const resumeTemplate = (data) => `
         </div>
 
         <p>
-            ${data.leadership}
+            ${escapeHtml(data.leadership)}
         </p>
 
     </div>
@@ -309,7 +331,7 @@ const resumeTemplate = (data) => `
         </div>
 
         <p>
-            ${data.languages.join(", ")}
+            ${data.languages.map(escapeHtml).join(", ")}
         </p>
 
     </div>
