@@ -126,31 +126,49 @@ Respond with valid JSON only, matching the schema exactly.
 }
 
 async function generatePdfFromHtml(htmlContent) {
-    const browser = await puppeteer.launch()
-    const page = await browser.newPage();
-    await page.setContent(htmlContent, { waitUntil: "networkidle0" })
-  await page.emulateMediaType("print");
-
-  await page.evaluate(() => {
-    const resume = document.querySelector(".resume");
-    if (!resume) return;
-
-    const printableHeight = 1050;
-    const scale = Math.max(Math.min(1, printableHeight / resume.scrollHeight), 0.72);
-    resume.style.zoom = scale;
-    resume.style.width = `${100 / scale}%`;
-  });
-
-    const pdfBuffer = await page.pdf({
-    format: "A4",
-    printBackground: true,
-    preferCSSPageSize: true,
-    pageRanges: "1"
+    const browser = await puppeteer.launch({
+        headless: true,
+        args: [
+            "--no-sandbox",
+            "--disable-setuid-sandbox"
+        ]
     })
 
-    await browser.close()
+    try {
+        const page = await browser.newPage()
 
-    return pdfBuffer
+        await page.setContent(htmlContent, {
+            waitUntil: "networkidle0"
+        })
+
+        await page.emulateMediaType("print")
+
+        await page.evaluate(() => {
+            const resume = document.querySelector(".resume")
+
+            if (!resume) return
+
+            const printableHeight = 1050
+            const scale = Math.max(
+                Math.min(1, printableHeight / resume.scrollHeight),
+                0.72
+            )
+
+            resume.style.zoom = scale
+            resume.style.width = `${100 / scale}%`
+        })
+
+        const pdfBuffer = await page.pdf({
+            format: "A4",
+            printBackground: true,
+            preferCSSPageSize: true,
+            pageRanges: "1"
+        })
+
+        return pdfBuffer
+    } finally {
+        await browser.close()
+    }
 }
 
 
