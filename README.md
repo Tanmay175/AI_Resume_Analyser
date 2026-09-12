@@ -1,4 +1,4 @@
-# ResumeForge AI
+# HireReady
 
 > AI-powered resume and interview preparation platform that evaluates a resume against a target job description and generates personalized interview preparation insights.
 
