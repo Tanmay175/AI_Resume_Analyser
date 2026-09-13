@@ -15,6 +15,7 @@ export const useInterview = () => {
 
     const generateReport = async ({ jobDescription, resumeFile, selfDescription }) => {
         setloading(true)
+        setReportError(null)
         try {
             const res = await generateInterviewReport({ jobDescription, resumeFile, selfDescription });
             const createdReport = res.interviewReport || res
@@ -22,7 +23,17 @@ export const useInterview = () => {
             setReportError(null)
             return createdReport
         } catch (err) {
-            console.log(err)
+            const status = err.response?.status
+            const message = err.response?.data?.message
+
+            setReportError({
+                status,
+                message: status === 503
+                    ? message || "The AI service is currently busy. Please wait a moment and try again."
+                    : message || "Unable to generate the interview report. Please try again."
+            })
+
+            console.error("generateReport error:", err)
             return null
         } finally {
             setloading(false)
@@ -71,13 +82,11 @@ export const useInterview = () => {
         }
     }, [setReports, setloading])
 
-
     useEffect(() => {
         if (interviewId) {
             getReportById(interviewId)
         }
     }, [interviewId, getReportById])
-
 
     return { loading, report, reportError, reports, generateReport, getReportById, getAllReports }
 }
