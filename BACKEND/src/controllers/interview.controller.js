@@ -49,8 +49,25 @@ async function genReportController(req,res){
         });
     } catch (error) {
         console.error("genReportController error:", error);
+
+        const errorMessage = error?.message || "";
+        const isAiUnavailable =
+            errorMessage.includes('"code":503') ||
+            errorMessage.includes("high demand") ||
+            errorMessage.includes("UNAVAILABLE") ||
+            error?.status === 503 ||
+            error?.statusCode === 503;
+
+        if (isAiUnavailable) {
+            return res.status(503).json({
+                success: false,
+                message: "The AI service is currently busy. Please wait a moment and try generating your report again."
+            });
+        }
+
         return res.status(500).json({
-            message: "Failed to generate interview report",
+            success: false,
+            message: "Failed to generate interview report. Please try again.",
             error: error.message
         });
     }
